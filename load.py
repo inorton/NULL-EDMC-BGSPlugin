@@ -6,6 +6,11 @@ import os
 import ttk
 import Tkinter as tk
 import myNotebook as nb
+
+PLUGIN_NAME = "NULL BGS Data"
+HERE = os.path.dirname(__file__)
+sys.path.append(HERE)
+
 import null_submit
 from urllib2 import HTTPError
 
@@ -14,7 +19,7 @@ if "LOAD_FAKE_CONFIG" in os.environ:
 else:
     from config import config
 
-PLUGIN_NAME = "NULL BGS Data"
+
 CLIENT = None
 
 CFG_CMDR = "null_plugin_cmdr"
