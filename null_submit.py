@@ -7,9 +7,7 @@ import urllib
 import json
 from cookielib import LWPCookieJar
 
-
-# events we care about
-EVENTS = ["MarketSell"]
+import creditvalue
 
 
 class SystemEntry(object):
@@ -62,10 +60,12 @@ class NULLClient(object):
     def __init__(self):
         self.address = None
         self.commander = None
+        self.commander_id = None
         self.password = None
         self.authenticated = False
         # the list of BGS tasks that are active
         self.tasks = []
+        self.job_types = []
         self.last_update_tasks = 0
         self.cookie = None
         self.cookiejar = LWPCookieJar()
@@ -122,7 +122,7 @@ class NULLClient(object):
 
     def update_tasks(self):
         """
-        Get the latest task list if it is old
+        Get the latest task list and job types from the server
         :return:
         """
         if not self.authenticated:
@@ -135,8 +135,13 @@ class NULLClient(object):
             set_headers(req, {"Content-Type": "application/json"})
             res = self.opener.open(req)
             response = res.read()
-            tasks = json.loads(response)
+            data = json.loads(response)
+            tasks = data["tasks"]
             tasklist = []
+            self.job_types = data["jobtypes"]
+            self.commander_id = data["commander_id"]
+            creditvalue.JOBTYPES = self.job_types
+
             # iterate the result and make objects
             for task in tasks:
                 system = SystemEntry(task["id"], task["system_name"])
@@ -179,8 +184,7 @@ class NULLClient(object):
         """
         if self.authenticated:
             if "event" in eventdata:
-                if eventdata["event"] in EVENTS:
-                    return self.match_location(systemname, stationname)
+                return self.match_location(systemname, stationname)
 
         return None
 
@@ -191,5 +195,12 @@ class NULLClient(object):
         :param eventdata:
         :return:
         """
-        print taskid
-        print eventdata
+        job = creditvalue.get_job(eventdata)
+
+        if job and job.value > 0 and job.job is not None:
+            self.post_urlform("{}/bgs/task/list".format(self.address), {
+                "bgs_task_id": int(taskid),
+                "commander_id_" + str(taskid): int(self.commander_id),
+                "contribution_" + str(taskid): int(job.value),
+                "job_type_id_" + str(taskid): int(job.job["id"])
+            })

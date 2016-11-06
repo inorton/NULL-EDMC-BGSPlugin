@@ -1,7 +1,7 @@
 """
 Reply some logs into the plugin journal_entry func
 """
-import load
+import load as nullplug
 import sys
 import fakeconfig
 
@@ -83,13 +83,13 @@ logs = [
 sell = [x for x in logs if x["event"] == "MarketSell"]
 
 
-fakeconfig.config.set(load.CFG_CMDR, cmdr)
-fakeconfig.config.set(load.CFG_PASS, passwd)
-fakeconfig.config.set(load.CFG_SERVER, address)
+fakeconfig.config.set(nullplug.CFG_CMDR, cmdr)
+fakeconfig.config.set(nullplug.CFG_PASS, passwd)
+fakeconfig.config.set(nullplug.CFG_SERVER, address)
 
-load.plugin_start()
+nullplug.plugin_start()
 
 
 for sellitem in sell:
-    load.journal_entry(cmdr, "LTT 4961", "Conway City", sellitem)
+    nullplug.journal_entry(cmdr, "LTT 4961", "Conway City", sellitem)
 
