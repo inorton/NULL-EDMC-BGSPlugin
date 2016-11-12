@@ -69,6 +69,20 @@ def MarketSell(event):
     return ret
 
 
+def RedeemVoucher(event):
+    """
+    Cash in a bounty?
+    :param event:
+    :return:
+    """
+
+    if event["Type"] == "bounty":
+        ret = MissionResult()
+        ret.value = int(event["Amount"])
+        ret.job = match_jobtype("Bounties")
+        return ret
+    return None
+
 def get_job(eventdata):
     """
     Get the credit value for an event

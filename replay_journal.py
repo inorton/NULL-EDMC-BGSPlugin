@@ -76,12 +76,16 @@ logs = [
 
     # Sell Beer
     {u'Count': 36, u'AvgPricePaid': 59, u'timestamp': u'2016-10-28T08:17:54Z', u'TotalSale': 6300, u'Type': u'beer',
-     u'SellPrice': 175, u'event': u'MarketSell'}
+     u'SellPrice': 175, u'event': u'MarketSell'},
+
+    # Cash in bounty
+    {u"timestamp": u"2016-11-04T22:39:33Z", u"event": u"RedeemVoucher", u"Type": u"bounty", u"Amount": 577811}
+
 ]
 
 # sell
 sell = [x for x in logs if x["event"] == "MarketSell"]
-
+bounty = [x for x in logs if x["event"] == "RedeemVoucher"]
 
 fakeconfig.config.set(nullplug.CFG_CMDR, cmdr)
 fakeconfig.config.set(nullplug.CFG_PASS, passwd)
@@ -93,3 +97,5 @@ nullplug.plugin_start()
 for sellitem in sell:
     nullplug.journal_entry(cmdr, "LTT 4961", "Conway City", sellitem)
 
+for bountyitem in bounty:
+    nullplug.journal_entry(cmdr, "LTT 4961", "Conway City", bountyitem)
