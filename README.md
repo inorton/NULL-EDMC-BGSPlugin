@@ -11,4 +11,4 @@ You are part of NULL, simples!
 
 # Installation
 
-Put the NULLData folder into the EDMC plugins folder.  This is usually found in a place like C:\Users\MYUSERNAME\AppData\Local\EDMarketConnector\plugins
+Put the NULL-EDMC-BGSPlugin folder into the EDMC plugins folder.  This is usually found in a place like C:\Users\MYUSERNAME\AppData\Local\EDMarketConnector\plugins
