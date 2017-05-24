@@ -81,7 +81,7 @@ def journal_entry(cmdr, system, station, entry, state):
 
     global CONFIG
     paths = [CONFIG.server.get().rstrip("/"),
-	         'api',
+             'api',
              CONFIG.apikey.get(),
              urllib.quote(cmdr),
              urllib.quote(system)]
