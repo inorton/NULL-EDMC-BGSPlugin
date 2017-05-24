@@ -15,7 +15,7 @@ HTTP_HEADERS = {
     "user-agent": "edmc-NULLTracker-0.1"
 }
 
-DEFAULT_SERVER = "https://ui.ltt4961.space/api"
+DEFAULT_SERVER = "https://ui.ltt4961.space"
 EVENTS = ["Location", "FSDJump", "Docked"]
 
 
@@ -81,6 +81,7 @@ def journal_entry(cmdr, system, station, entry, state):
 
     global CONFIG
     paths = [CONFIG.server.get().rstrip("/"),
+	         'api',
              CONFIG.apikey.get(),
              urllib.quote(cmdr),
              urllib.quote(system)]
