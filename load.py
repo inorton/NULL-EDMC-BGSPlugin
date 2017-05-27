@@ -39,6 +39,9 @@ def plugin_start():
 
     CONFIG.server = tk.StringVar(value=config.get("NULLTrackerServer"))
     CONFIG.apikey = tk.StringVar(value=config.get("NULLTrackerAPIKey"))
+    CONFIG.status = tk.StringVar(value="--")
+
+    post_event({}, config.get("cmdrs")[0], "LTT-4961", None)
 
 
 def plugin_prefs(parent):
@@ -47,13 +50,15 @@ def plugin_prefs(parent):
     frame.columnconfigure(1, weight=1)
 
     nb.Label(frame, text="NULL Tracker Configuration").grid(padx=10, row=8, sticky=tk.W)
-    nb.Label(frame, text="NULL Tracker Server").grid(padx=10, row=10, sticky=tk.W)
 
+    nb.Label(frame, text="NULL Tracker Server").grid(padx=10, row=10, sticky=tk.W)
     nb.Entry(frame, textvariable=CONFIG.server).grid(padx=10, row=10, column=1, sticky=tk.EW)
 
-    nb.Label(frame, text="NULL Tracker API Key").grid(padx=10, row=12, sticky=tk.W)
+    nb.Label(frame, text="NULL Tracker API Key").grid(padx=10, row=11, sticky=tk.W)
+    nb.Entry(frame, textvariable=CONFIG.apikey).grid(padx=10, row=11, column=1, sticky=tk.EW)
 
-    nb.Entry(frame, textvariable=CONFIG.apikey).grid(padx=10, row=12, column=1, sticky=tk.EW)
+    nb.Label(frame, text="Status             ").grid(padx=10, row=12, sticky=tk.W)
+    nb.Label(frame, textvariable=CONFIG.status).grid(padx=10, row=12, column=1, sticky=tk.EW)
 
     return frame
 
@@ -62,6 +67,7 @@ def prefs_changed():
     global CONFIG
     config.set("NULLTrackerServer", CONFIG.server.get())
     config.set("NULLTrackerAPIKey", CONFIG.apikey.get())
+    post_event({}, config.get("cmdrs")[0], "LTT-4961", None)
 
 
 def journal_entry(cmdr, system, station, entry, state):
@@ -79,6 +85,18 @@ def journal_entry(cmdr, system, station, entry, state):
     if entry["event"] not in EVENTS:
         return
 
+    post_event(entry, cmdr, system, station)
+
+
+def post_event(entry, cmdr, system, station):
+    """
+    Send a journal event to NULL
+    :param entry:
+    :param url:
+    :return:
+    """
+    global CONFIG
+
     global CONFIG
     paths = [CONFIG.server.get().rstrip("/"),
              'api',
@@ -89,11 +107,16 @@ def journal_entry(cmdr, system, station, entry, state):
         paths.append(station)
     url = "/".join(paths)
 
-
     form_encoded = {"event": json.dumps(entry)}
     try:
         resp = requests.post(url, data=form_encoded, headers=HTTP_HEADERS)
-        if resp:
+        if resp is not None:
+            # little bit of a silly way to check we are connected by sending an invalid event :)
+            if resp.status_code == 200:
+                CONFIG.status.set("working")
+            if len(entry) == 0 and resp.status_code == 400:
+                CONFIG.status.set("connected")
             print resp
     except Exception as err:
         print err
+        CONFIG.status.set("error {}".format(err))
