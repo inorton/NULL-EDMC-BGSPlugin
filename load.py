@@ -40,6 +40,7 @@ def plugin_start():
     CONFIG.server = tk.StringVar(value=config.get("NULLTrackerServer"))
     CONFIG.apikey = tk.StringVar(value=config.get("NULLTrackerAPIKey"))
     CONFIG.status = tk.StringVar(value="--")
+    CONFIG.uploads = tk.StringVar(value="--")
 
     post_event({}, config.get("cmdrs")[0], "LTT-4961", None)
 
@@ -59,6 +60,7 @@ def plugin_prefs(parent):
 
     nb.Label(frame, text="Status             ").grid(padx=10, row=12, sticky=tk.W)
     nb.Label(frame, textvariable=CONFIG.status).grid(padx=10, row=12, column=1, sticky=tk.EW)
+    nb.Label(frame, textvariable=CONFIG.uploads).grid(padx=10, row=13, column=1, sticky=tk.EW)
 
     return frame
 
@@ -88,6 +90,48 @@ def journal_entry(cmdr, system, station, entry, state):
     post_event(entry, cmdr, system, station)
 
 
+def get_profile(cmdr):
+    """
+    Get the current player's standing
+    :param cmdr:
+    :return:
+    """
+    global CONFIG
+    paths = [CONFIG.server.get().rstrip("/"),
+             'api',
+             CONFIG.apikey.get()]
+    url = "/".join(paths)
+
+    resp = requests.get(url, headers=HTTP_HEADERS)
+    if resp:
+        if resp.status_code == 200:
+            data = json.loads(resp.content)
+            if data and "commanders" in data:
+                if cmdr in data["commanders"]:
+                    return data
+    return None
+
+
+__overlay__ = None
+
+
+def hits_overlay_notify(message):
+    """
+    If installed, display a message on EDMCOverlay/HITS
+    :param message:
+    :return:
+    """
+    try:
+        global __overlay__
+        if not __overlay__:
+            import edmcoverlay
+            __overlay__ = edmcoverlay.Overlay()
+        __overlay__.send_message("null-track-notify", message, "#339933", 50, 1100, ttl=6, size="normal")
+
+    except Exception as err:
+        print err
+
+
 def post_event(entry, cmdr, system, station):
     """
     Send a journal event to NULL
@@ -95,8 +139,6 @@ def post_event(entry, cmdr, system, station):
     :param url:
     :return:
     """
-    global CONFIG
-
     global CONFIG
     paths = [CONFIG.server.get().rstrip("/"),
              'api',
@@ -107,16 +149,19 @@ def post_event(entry, cmdr, system, station):
         paths.append(station)
     url = "/".join(paths)
 
-    form_encoded = {"event": json.dumps(entry)}
     try:
-        resp = requests.post(url, data=form_encoded, headers=HTTP_HEADERS)
-        if resp is not None:
-            # little bit of a silly way to check we are connected by sending an invalid event :)
-            if resp.status_code == 200:
-                CONFIG.status.set("working")
-            if len(entry) == 0 and resp.status_code == 400:
-                CONFIG.status.set("connected")
-            print resp
+        if entry and len(entry):
+            form_encoded = {"event": json.dumps(entry)}
+            resp = requests.post(url, data=form_encoded, headers=HTTP_HEADERS)
+            if resp:
+                hits_overlay_notify("NULL update sent..")
+
+        profile = get_profile(cmdr)
+        if profile:
+            CONFIG.status.set("OK: This week: {}cr".format(
+                profile["contributions"]["current_week"]["total_value"]))
+            CONFIG.uploads.set("Sent {} updates".format(
+                profile["contributions"]["current_week"]["influence_updates"]["count"]))
     except Exception as err:
         print err
         CONFIG.status.set("error {}".format(err))
